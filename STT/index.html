@@ -33,6 +33,7 @@
         const chatContainer = $('#chat-container');
         let CATEGORY_STATUS = 1;
         let level1_category = 1;
+        ttsEnabled = false;
         const data = {
             'level1': [
                 {
@@ -56,7 +57,7 @@
                             'message': '<br>저희 매장은 고급 샌들 전문 매장입니다. 상세정보를 보여드립니다.<p>'
                         },
                         {
-                            'name': '상위 메뉴',
+                            'name': '상위메뉴',
                             'number': 0,
                             'message': '<br> 상위 메뉴로 이동합니다. </p>'
                         }
@@ -68,22 +69,22 @@
                     'message': '<br>아래에서 주제를 선택해주세요:<p>',
                     'level2': [
                         {
-                            'name': '여성 의류',
+                            'name': '여성의류',
                             'number': 1,
                             'message': '<br>저희 매장은 지그재그 재휴 매장입니다. 상세정보를 보여드립니다.<p>'
                         },
                         {
-                            'name': '남성 의류',
+                            'name': '남성의류',
                             'number': 2,
                             'message': '<br>저희 매장은 정장 전문 매장입니다. 상세정보를 보여드립니다.<p>'
                         },
                         {
-                            'name': '유아 의류',
+                            'name': '유아의류',
                             'number': 3,
                             'message': '<br>저희 매장은 아가방 전문 매장입니다. 상세정보를 보여드립니다.<p>'
                         },
                         {
-                            'name': '상위 메뉴',
+                            'name': '상위메뉴',
                             'number': 0,
                             'message': '<br> 상위 메뉴로 이동합니다. </p>'
                         }
@@ -115,12 +116,22 @@
             recognition.start();
         }
 
+        function textToSpeech(message){
+            const speech = new SpeechSynthesisUtterance();
+            speech.text = message;
+            window.speechSynthesis.speak(speech);
+        }
+
 
         // 메세지를 화면에 추가
         function appendMessage(sender, message) {
-            const messageElement = $('<div></div>').html(`<strong>${sender}:</strong> ${message}`);
+            const messageElement = $('<div></div>').html(`<p><strong>${sender}:</strong> ${message}`);
             chatContainer.append(messageElement);
             chatContainer.scrollTop(chatContainer.prop('scrollHeight'));
+
+            if(ttsEnabled) {
+                textToSpeech(message);
+            }
         }
 
         // 초기 환영 메세지 출력
@@ -218,7 +229,6 @@
             // 메뉴 번호 검색 방식
             if (!found){
                 findByNumber(userMessage);
-
             }
 
             // if (!found) {
@@ -233,16 +243,24 @@
         // 하위 카테고리 출력
         function showSubCategories(category) {
             setTimeout(function () {
+                message = '';
                 for (let i = 0; i < category.level2.length; i++) {
-                    chatContainer.append(`${category.level2[i].number}. ${category.level2[i].name}<br>`);
+                    // 서브메뉴 메세지를 하나로 만든다.
+                    // chatContainer.append(`${category.level2[i].number}. ${category.level2[i].name}<br>`);
+                    // message = message + '신규문자';
+                    // message += '신규문자';
+                    message += `${category.level2[i].number}. ${category.level2[i].name}<br>`;
+                }
+                // chatContainer에 하나의 메세지로 갱신한다.
+                chatContainer.append(message);
+                // 하나의 메세지에 대해 음성 서비스를 제공한다.
+                if(ttsEnabled) {
+                    textToSpeech(message);
                 }
                 chatContainer.scrollTop(chatContainer.prop('scrollHeight'));
             }, 500);
 
-            // for (let i = 0; i < category.level2.length; i++) {
-            //     chatContainer.append(`${category.level2[i].number}. ${category.level2[i].name}<br>`);
-            // }
-            // chatContainer.scrollTop(chatContainer.prop('scrollHeight'));
+
         }
         // 초기 환영 메시지 출력
         showWelcomeMessage();
@@ -253,6 +271,11 @@
         let sendBtn = $('<button id="send-btn">전송</button>').appendTo(inputContainer);
 
         let speechBtn = $('<button id="speech-btn">음성 입력</button>').appendTo(inputContainer); // 음성 입력 버튼 추가
+
+// 음성 출력 기능 On/Off 라디오 버튼 생성
+        let ttsCheckboxContainer = $('<div id="tts-checkbox-container"></div>').appendTo(inputContainer);
+        let ttsLabel = $('<label for="tts-radio">TTS On/Off:</label>').appendTo(ttsCheckboxContainer);
+        let ttsCheckbox = $('<input type="checkbox" id="tts-checkbox" name="tts" value="tts-on">').appendTo(ttsCheckboxContainer);
 
         // 전송 버튼 클릭 이벤트
         sendBtn.click(function () {
@@ -271,6 +294,12 @@
         // 음성 입력 버튼 클릭 이벤트
         speechBtn.click(function() {
             startSpeechRecognition();
+        });
+
+        // TTS On/Off 체크 박스 변경 이벤트
+        ttsCheckbox.change(function() {
+            ttsEnabled = $('#tts-checkbox').prop('checked');
+            console.log('TTS Enabled:', ttsEnabled);
         });
 
     });
